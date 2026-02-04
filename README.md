@@ -7,4 +7,5 @@ Shows command before execution for confirmation
 Automatically picks the best available model
 
 Installation
-curl -sSL https://raw.githubusercontent.com/skbasava/sk-shells/master/install.sh | sudo sh
+curl -sSL https://raw.githubusercontent.com/skbasava/sk-shell/main/install.sh | sudo sh
+
