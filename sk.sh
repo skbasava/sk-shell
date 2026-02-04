@@ -24,8 +24,8 @@ if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
     echo ""
     echo "Description:"
     echo "  SK converts natural language instructions into shell commands."
-    echo "  It supports OpenAI, Anthropic, Gemini, and Ollama API providers."
-    echo "  Set one of: OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY, or OLLAMA_MODEL"
+    echo "  It supports Groq and Ollama API providers."
+    echo "  Set one of: GROQ_API_KEY, or OLLAMA_MODEL"
     exit 0
 fi
 
@@ -41,7 +41,7 @@ fi
 
 # Handle --upgrade flag
 if [[ "${1:-}" == "--upgrade" ]]; then
-    echo "Upgrading SK utility..."
+    echo "Upgrading SK..."
 
     # Determine installation directory
     INSTALL_DIR="$SCRIPT_DIR"
@@ -87,17 +87,17 @@ if [ -f "$CONFIG_FILE" ]; then
 fi
 
 # Detect which API key is available
-API_PROVIDER=""
-if [ -n "${OPENAI_API_KEY:-}" ]; then
-    API_PROVIDER="openai"
+API_PROVIDER="GROQ"
+if [ -n "${GROQ_API_KEY:-}" ]; then
+    API_PROVIDER="groq"
 else
-    echo "Error: No API key found. Set one of: OPENAI_API_KEY"
+    echo "Error: No API key found. Set one of: GROQ_API_KEY"
     exit 1
 fi
 
 # Set default models if not configured
-if [ "$API_PROVIDER" = "openai" ] && [ -z "${OPENAI_MODEL:-}" ]; then
-    OPENAI_MODEL="gpt-4o-mini"
+if [ "$API_PROVIDER" = "groq" ] && [ -z "${GROQ_MODEL:-}" ]; then
+    GROQ_MODEL="llama-3.1-8b-instant"
 fi
 
 # Check if instruction is provided
@@ -131,12 +131,12 @@ PROMPT_TEXT="You are a shell command generator. Convert the user's natural langu
 [[ $DEBUG -eq 1 ]] && echo "DEBUG: Instruction: $INSTRUCTION" >&2
 
 # Make API request based on provider
-if [ "$API_PROVIDER" = "openai" ]; then
+if [ "$API_PROVIDER" = "groq" ]; then
     # Try models in order of preference (cheap to cheaper)
-    OPENAI_MODELS=("${OPENAI_MODEL}" "gpt-4o-mini" "gpt-3.5-turbo")
+    GROQ_MODELS=("${GROQ_MODEL}" "llama-3.1-8b-instant")
 
-    for MODEL in "${OPENAI_MODELS[@]}"; do
-        [[ $DEBUG -eq 1 ]] && echo "DEBUG: Trying OpenAI model: $MODEL" >&2
+    for MODEL in "${GROQ_MODELS[@]}"; do
+        [[ $DEBUG -eq 1 ]] && echo "DEBUG: Trying Groq model: $MODEL" >&2
         JSON_PAYLOAD=$(cat <<EOF
 {
   "model": "$MODEL",
@@ -147,19 +147,19 @@ if [ "$API_PROVIDER" = "openai" ]; then
 EOF
 )
         JSON_PAYLOAD="${JSON_PAYLOAD//PROMPT_PLACEHOLDER/$PROMPT_TEXT}"
-        [[ $DEBUG -eq 1 ]] && echo "DEBUG: Sending request to OpenAI..." >&2
+        [[ $DEBUG -eq 1 ]] && echo "DEBUG: Sending request to Groq..." >&2
         if [ "$HTTP_CLIENT" = "curl" ]; then
-            RESPONSE=$(curl -s -X POST https://api.openai.com/v1/chat/completions \
+            RESPONSE=$(curl -s -X POST https://api.groq.com/openai/v1/chat/completions \
                 -H "Content-Type: application/json" \
-                -H "Authorization: Bearer ${OPENAI_API_KEY}" \
+                -H "Authorization: Bearer ${GROQ_API_KEY}" \
                 -d "$JSON_PAYLOAD")
         else
             RESPONSE=$(wget -q -O- \
                 --method=POST \
                 --header="Content-Type: application/json" \
-                --header="Authorization: Bearer ${OPENAI_API_KEY}" \
+                --header="Authorization: Bearer ${GROQ_API_KEY}" \
                 --body-data="$JSON_PAYLOAD" \
-                https://api.openai.com/v1/chat/completions)
+                https://api.groq.com/openai/v1/chat/completions)
         fi
         [[ $DEBUG -eq 1 ]] && echo "DEBUG: Response received" >&2
         [[ $DEBUG -eq 1 ]] && echo "DEBUG: Full response: $RESPONSE" >&2
@@ -185,7 +185,7 @@ EOF
 
         if [ -n "$COMMAND" ]; then
             # Save working model to config
-            echo "OPENAI_MODEL=\"$MODEL\"" > "$CONFIG_FILE"
+            echo "GROQ_MODEL=\"$MODEL\"" > "$CONFIG_FILE"
             [[ $DEBUG -eq 1 ]] && echo "DEBUG: Saved working model: $MODEL" >&2
             [[ $DEBUG -eq 1 ]] && echo "DEBUG: Extracted command: $COMMAND" >&2
             break
