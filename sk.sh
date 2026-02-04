@@ -52,9 +52,9 @@ if [[ "${1:-}" == "--upgrade" ]]; then
 
     echo "Downloading latest version..."
     if command -v curl &> /dev/null; then
-        curl -L -o "$TEMP_DIR/install.sh" https://raw.githubusercontent.com/yourusername/x/main/install.sh
+        curl -L -o "$TEMP_DIR/install.sh" https://raw.githubusercontent.com/skbasava/sk-shell/main/install.sh
     elif command -v wget &> /dev/null; then
-        wget -O "$TEMP_DIR/install.sh" https://raw.githubusercontent.com/yourusername/x/main/install.sh
+        wget -O "$TEMP_DIR/install.sh" https://raw.githubusercontent.com/skbasava/sk-shell/main/install.sh
     else
         echo "Error: Neither curl nor wget is available"
         exit 1
